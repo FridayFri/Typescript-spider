@@ -1,11 +1,22 @@
-import { Router, Request, Response } from "express";
-import Crowller from "./crowller";
-import DellAnalyzer from "./dellAnalyzer";
-import fs from 'fs'
-import path from 'path'
-interface RequestWithBody extends Request {
+import { Router, Request, Response, NextFunction } from "express";
+import Crowller from "./utils/crowller";
+import Analyzer from "./utils/analyzer";
+import fs from "fs";
+import path from "path";
+import { getResponseData } from "./utils/util";
+
+interface BodyRequest extends Request {
   body: { [key: string]: string | undefined };
 }
+const checkLogin = (req: Request, res: Response, next: NextFunction) => {
+  const isLogin = req.session ? req.session.login : false;
+  if (isLogin) {
+    next();
+  } else {
+    res.json(getResponseData(null, '请先登录'));
+  }
+};
+
 
 const router = Router();
 
@@ -42,7 +53,7 @@ router.get("/logout", (req: Request, res: Response) => {
   res.redirect("/");
 });
 
-router.post("/login", (req: RequestWithBody, res: Response) => {
+router.post("/login", (req: BodyRequest, res: Response) => {
   const { password } = req.body;
   const isLogin = req.session ? req.session.login : false;
   if (isLogin) {
@@ -57,31 +68,22 @@ router.post("/login", (req: RequestWithBody, res: Response) => {
   }
 });
 
-router.get("/getData", (req: RequestWithBody, res: Response) => {
-  const isLogin = req.session ? req.session.login : false;
-  if (isLogin) {
-    const url = `http://www.dell-lee.com`;
-    const analyzer = DellAnalyzer.getInstance();
+router.get("/getData", checkLogin, (req: BodyRequest, res: Response) => {
+  const url = `http://www.dell-lee.com`;
+    const analyzer = Analyzer.getInstance();
     new Crowller(url, analyzer);
     res.send(" getData");
-  } else {
-    res.send("登陆失败");
-  }
+  res.json(getResponseData(true));
 });
 
-router.get('/showData',  (req: RequestWithBody, res: Response) =>{
-  const isLogin = req.session ? req.session.login : false;
-  if (isLogin) {
-    try {
-      const position = path.resolve(__dirname, '../data/course.json');
-      const result = fs.readFileSync(position, 'utf8');
-      res.json(JSON.parse(result));
-    } catch (e) {
-      res.send('尚未爬取到内容');
-    }
-  } else {
-    res.send('请登陆后查看内容');
+router.get("/showData", checkLogin, (req: BodyRequest, res: Response) => {
+  try {
+    const position = path.resolve(__dirname, "../data/course.json");
+    const result = fs.readFileSync(position, "utf8");
+    res.json(getResponseData(JSON.parse(result)));
+  } catch (e) {
+    res.json(getResponseData(false, "数据不存在"));
   }
-})
+});
 
 export default router;
