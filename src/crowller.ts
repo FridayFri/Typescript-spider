@@ -36,3 +36,6 @@ const url = `http://www.dell-lee.com`;
 const analyzer =  DellAnalyzer.getInstance();
 
 const crowller = new Crowller(url, analyzer);
+
+
+export default Crowller

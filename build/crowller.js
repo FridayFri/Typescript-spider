@@ -87,3 +87,4 @@ var Crowller = /** @class */ (function () {
 var url = "http://www.dell-lee.com";
 var analyzer = dellAnalyzer_1.default.getInstance();
 var crowller = new Crowller(url, analyzer);
+exports.default = Crowller;
